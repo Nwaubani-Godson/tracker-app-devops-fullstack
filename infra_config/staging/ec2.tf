@@ -43,7 +43,7 @@ resource "aws_instance" "tracker_app_web_server" {
 resource "aws_security_group" "tracker_app_sg" {
   name        = "${var.environment}-tracker-app-sg"
   description = "Allow web traffic"
-  vpc_id      = var.vpc_cidr
+  vpc_id      = aws_vpc.main.id
 
   tags = merge(local.common_tags, {
     Name = "${var.environment}-tracker-app-sg"
