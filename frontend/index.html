@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Tracker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+      color: #333;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #003366;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin-left: 10px;
+      background-color: #00cc99;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #009977;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+   .status-label {
+    color: #888;
+    font-style: italic;
+    font-size: 0.9em;
+    margin-left: auto;
+    padding-left: 10px;
+   }
+
+   li .completed {
+  color: gray;
+  font-style: italic;
+}
+
+
+    .status-label {
+      color: gray;
+      font-style: italic;
+      margin-right: 10px;
+    }
+
+    select.dropdown {
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+    }
+
+    select.dropdown:hover {
+      background-color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Task Tracker</h1>
+  <input type="text" id="taskInput" placeholder="Enter new task..." />
+  <button onclick="addTask()">Add</button>
+  <ul id="taskList"></ul>
+  <script src="script.js"></script>
+</body>
+</html>
