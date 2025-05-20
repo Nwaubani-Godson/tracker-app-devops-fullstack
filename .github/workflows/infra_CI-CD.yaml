@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set Environment Directory
-        run: echo "TF_DIR=terraform/${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        run: echo "TF_DIR=infra_config/${{ github.event.inputs.environment }}" >> $GITHUB_ENV
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -33,7 +33,7 @@ jobs:
         run: terraform -chdir=$TF_DIR init
 
       - name: Terraform Plan
-        run: terraform -chdir=$TF_DIR plan -var-file="terraform.tfvars"
+        run: terraform -chdir=$TF_DIR plan 
 
       - name: Terraform Apply
-        run: terraform -chdir=$TF_DIR apply -auto-approve -var-file="terraform.tfvars"
+        run: terraform -chdir=$TF_DIR apply -auto-approve 
