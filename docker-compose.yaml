@@ -18,6 +18,8 @@ services:
       - backend
     networks:
       - tracker-app-net
+    environment:
+      BACKEND_URL:  "${FRONTEND_EXTERNAL_BACKEND_URL}"
 
 networks:
   tracker-app-net:
