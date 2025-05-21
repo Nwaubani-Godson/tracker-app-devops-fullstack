@@ -1,5 +1,5 @@
 //const API = "http://backend:8000/tasks"; // uncomment for local dev test
-const API = "http://107.23.92.88/tasks";
+const API = "http://107.23.92.88:8000/tasks";
 
 async function loadTasks() {
   const res = await fetch(API);
