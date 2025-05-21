@@ -22,6 +22,8 @@ resource "aws_instance" "tracker_app_web_server" {
 
   vpc_security_group_ids = [aws_security_group.tracker_app_sg.id]
 
+  iam_instance_profile = aws_iam_instance_profile.ec2_ecr_profile.name
+
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
