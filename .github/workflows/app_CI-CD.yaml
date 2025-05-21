@@ -52,13 +52,16 @@ jobs:
           docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
 
-
       - name: Build and Push Frontend Image
         run: |
           docker build -t frontend ./frontend
           docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
 
+      - name: Create .env File
+        run: |
+          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest" > .env
+          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest" >> .env
 
       - name: Deploy to EC2 (Staging)
         env:
@@ -70,26 +73,20 @@ jobs:
           echo "$KEY" > key.pem
           chmod 600 key.pem
 
-          # Transfer docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose-staging.yaml $USERNAME@$HOST:/home/ubuntu/tracker-app/
+          # Transfer Compose and .env files
+          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # Run deployment commands remotely
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
             set -e
             cd /home/ubuntu/tracker-app
 
-            # Authenticate Docker to ECR from within EC2
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-            # Pull latest images
-            docker pull $ECR_REGISTRY/staging-backend-repo:latest
-            docker pull $ECR_REGISTRY/staging-frontend-repo:latest
-
-            # Deploy
-            docker-compose down
-            docker-compose up -d
+            docker-compose --env-file .env pull
+            docker-compose --env-file .env down
+            docker-compose --env-file .env up -d
           EOF
-
 
   deploy_production:
     needs: build_and_deploy_staging
@@ -110,33 +107,32 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Deploy to EC2 (production)
+      - name: Create .env File for Production
+        run: |
+          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest" > .env
+          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest" >> .env
+
+      - name: Deploy to EC2 (Production)
         env:
-          HOST: ${{ secrets.STAGING_EC2_HOST }}
+          HOST: ${{ secrets.PROD_EC2_HOST }}
           USERNAME: ubuntu
-          KEY: ${{ secrets.STAGING_EC2_SSH_KEY }}
+          KEY: ${{ secrets.PROD_EC2_SSH_KEY }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           echo "$KEY" > key.pem
           chmod 600 key.pem
 
-          # Transfer docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose-prod.yaml $USERNAME@$HOST:/home/ubuntu/tracker-app/
+          # Transfer Compose and .env files
+          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # Run deployment commands remotely
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
             set -e
             cd /home/ubuntu/tracker-app
 
-            # Authenticate Docker to ECR from within EC2
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-            # Pull latest images
-            docker pull $ECR_REGISTRY/staging-backend-repo:latest
-            docker pull $ECR_REGISTRY/staging-frontend-repo:latest
-
-            # Deploy
-            docker-compose down
-            docker-compose up -d
+            docker-compose --env-file .env pull
+            docker-compose --env-file .env down
+            docker-compose --env-file .env up -d
           EOF
-
