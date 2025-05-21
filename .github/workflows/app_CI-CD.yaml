@@ -69,11 +69,11 @@ jobs:
           chmod 600 key.pem
 
           # Transfer docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml $USERNAME@$HOST:/home/ubuntu/tasktracker/
+          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # Run deployment commands remotely
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << 'EOF'
-            cd /home/ubuntu/tasktracker
+            cd /home/ubuntu/tracker-app
             docker pull ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
             docker pull ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
 
@@ -110,11 +110,11 @@ jobs:
           chmod 600 key.pem
 
           # Transfer docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml $USERNAME@$HOST:/home/ubuntu/tasktracker/
+          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # Run deployment commands remotely
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << 'EOF'
-            cd /home/ubuntu/tasktracker
+            cd /home/ubuntu/tracker-app
             docker pull ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
             docker pull ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
 
