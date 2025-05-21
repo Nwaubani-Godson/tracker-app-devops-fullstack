@@ -48,19 +48,19 @@ jobs:
       - name: Build and Push Backend Image (Staging)
         run: |
           docker build -t backend ./backend
-          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/tracker-backend-staging:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/tracker-backend-staging:latest
+          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
 
       - name: Build and Push Frontend Image (Staging)
         run: |
           docker build -t frontend ./frontend
-          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/tracker-frontend-staging:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/tracker-frontend-staging:latest
+          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
 
       - name: Create .env File for Docker Compose (Staging)
         run: |
-          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/tracker-backend-staging:latest" > .env
-          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/tracker-frontend-staging:latest" >> .env
+          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest" > .env
+          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest" >> .env
           echo "FRONTEND_EXTERNAL_BACKEND_URL=http://${{ secrets.STAGING_EC2_HOST }}:8000" >> .env
 
       - name: Deploy to EC2 (Staging)
@@ -115,19 +115,19 @@ jobs:
       - name: Build and Push Backend Image (Production)
         run: |
           docker build -t backend ./backend
-          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/tracker-backend-prod:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/tracker-backend-prod:latest
+          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
 
       - name: Build and Push Frontend Image (Production)
         run: |
           docker build -t frontend ./frontend
-          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/tracker-frontend-prod:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/tracker-frontend-prod:latest
+          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
 
       - name: Create .env File for Docker Compose (Production)
         run: |
-          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/tracker-backend-prod:latest" > .env
-          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/tracker-frontend-prod:latest" >> .env
+          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest" > .env
+          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest" >> .env
           echo "FRONTEND_EXTERNAL_BACKEND_URL=https://${{ secrets.PROD_EC2_HOST }}:8000" >> .env
 
       - name: Deploy to EC2 (Production)
