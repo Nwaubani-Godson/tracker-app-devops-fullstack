@@ -69,7 +69,7 @@ jobs:
           chmod 600 key.pem
 
           # Transfer docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yml $USERNAME@$HOST:/home/ubuntu/tasktracker/
+          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml $USERNAME@$HOST:/home/ubuntu/tasktracker/
 
           # Run deployment commands remotely
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << 'EOF'
@@ -110,7 +110,7 @@ jobs:
           chmod 600 key.pem
 
           # Transfer docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yml $USERNAME@$HOST:/home/ubuntu/tasktracker/
+          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml $USERNAME@$HOST:/home/ubuntu/tasktracker/
 
           # Run deployment commands remotely
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << 'EOF'
