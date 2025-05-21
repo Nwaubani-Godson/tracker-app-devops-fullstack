@@ -3,12 +3,13 @@ name: Task Tracker CI/CD
 on:
   push:
     branches:
-      - main    
-  workflow_dispatch: 
+      - main
+  workflow_dispatch:
 
 jobs:
   test_backend:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -45,19 +46,19 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build and Push Backend Image (Staging)
+      - name: Build and Push Backend Image
         run: |
           docker build -t backend ./backend
           docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
 
-      - name: Build and Push Frontend Image (Staging)
+      - name: Build and Push Frontend Image
         run: |
           docker build -t frontend ./frontend
           docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
 
-      - name: Create .env File for Docker Compose (Staging)
+      - name: Create .env File
         run: |
           echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest" > .env
           echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest" >> .env
@@ -65,7 +66,7 @@ jobs:
 
       - name: Deploy to EC2 (Staging)
         env:
-          HOST: ${{ secrets.STAGING_EC2_HOST }} 
+          HOST: ${{ secrets.STAGING_EC2_HOST }}
           USERNAME: ubuntu
           KEY: ${{ secrets.STAGING_EC2_SSH_KEY }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -73,28 +74,23 @@ jobs:
           echo "$KEY" > key.pem
           chmod 600 key.pem
 
-          # Transfer docker-compose.yaml and .env file to the EC2 instance
+          # Transfer Compose and .env files
           scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # Run deployment commands remotely
-          ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
             set -e
             cd /home/ubuntu/tracker-app
 
-            # Login to ECR on the EC2 instance
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-            # Pull latest images based on .env, then recreate/start containers
             docker-compose --env-file .env pull
-            docker-compose --env-file .env down # Stop and remove old containers
-            # --force-recreate ensures containers are rebuilt, running the entrypoint.sh
-            docker-compose --env-file .env up -d --force-recreate
-
-            docker image prune -f
+            docker-compose --env-file .env down
+            docker-compose --env-file .env up -d
           EOF
 
   deploy_production:
-    needs: build_and_deploy_staging 
+    needs: build_and_deploy_staging
     runs-on: ubuntu-latest
 
     steps:
@@ -112,19 +108,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build and Push Backend Image (Production)
-        run: |
-          docker build -t backend ./backend
-          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
-
-      - name: Build and Push Frontend Image (Production)
-        run: |
-          docker build -t frontend ./frontend
-          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
-
-      - name: Create .env File for Docker Compose (Production)
+      - name: Create .env File for Production
         run: |
           echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest" > .env
           echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest" >> .env
@@ -140,22 +124,17 @@ jobs:
           echo "$KEY" > key.pem
           chmod 600 key.pem
 
-          # Transfer docker-compose.yaml and .env file to the EC2 instance
+          # Transfer Compose and .env files
           scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # Run deployment commands remotely
-          ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
             set -e
             cd /home/ubuntu/tracker-app
 
-            # Login to ECR on the EC2 instance
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-            # Pull latest images based on .env, then recreate/start containers
             docker-compose --env-file .env pull
             docker-compose --env-file .env down
-            docker-compose --env-file .env up -d --force-recreate
-
-            # Remove old images
-            docker image prune -f
+            docker-compose --env-file .env up -d
           EOF
