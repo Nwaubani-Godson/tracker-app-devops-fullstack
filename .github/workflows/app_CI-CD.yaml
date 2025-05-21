@@ -71,7 +71,7 @@ jobs:
           chmod 600 key.pem
 
           # Transfer docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml $USERNAME@$HOST:/home/ubuntu/tracker-app/
+          scp -o StrictHostKeyChecking=no -i key.pem docker-compose-staging.yaml $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # Run deployment commands remotely
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
@@ -121,7 +121,7 @@ jobs:
           chmod 600 key.pem
 
           # Transfer docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml $USERNAME@$HOST:/home/ubuntu/tracker-app/
+          scp -o StrictHostKeyChecking=no -i key.pem docker-compose-prod.yaml $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # Run deployment commands remotely
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF

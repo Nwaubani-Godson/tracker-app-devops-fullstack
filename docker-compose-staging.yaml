@@ -2,16 +2,14 @@ version: '3'
 
 services:
   backend:
-    build: ./backend
-    # ports:
-    #   - "8000:8000" # uncomment this for local development testing
+    image: 654654484434.dkr.ecr.us-east-1.amazonaws.com/staging-backend-repo:latest
     expose:
       - 8000
     networks:
       - tracker-app-net
 
   frontend:
-    build: ./frontend
+    image: 654654484434.dkr.ecr.us-east-1.amazonaws.com/staging-frontend-repo:latest
     ports:
       - "3500:80"
     depends_on:
