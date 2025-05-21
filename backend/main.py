@@ -12,7 +12,7 @@ app.add_middleware(
      allow_origins=[
         "http://localhost:3500",
         "http://127.0.0.1:3500"
-    ],  # Adjust this to your frontend dev server origin
+    ],  # frontend endpoints 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

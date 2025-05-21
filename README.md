@@ -17,7 +17,7 @@ This project demonstrates a CI/CD pipeline setup for a Task Tracker App using **
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/tracker-app.git
+git clone https://github.com/Nwaubani-Godson/tracker-app-infra-deploy.git
 cd Task_Tracker_App
 ```
 

@@ -17,7 +17,7 @@ data "aws_ami" "ubuntu" {
 resource "aws_instance" "tracker_app_web_server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
-  subnet_id     = var.public_subnet_cidr
+  subnet_id     = aws_subnet.public.id
   key_name      = var.key_name
 
   vpc_security_group_ids = [aws_security_group.tracker_app_sg.id]
@@ -30,8 +30,8 @@ resource "aws_instance" "tracker_app_web_server" {
               systemctl start docker
 
               # Create app directory
-              mkdir -p /home/ec2-user/tracker-app
-              chown ec2-user:ec2-user /home/ec2-user/tracker-app
+              mkdir -p /home/ubuntu/tracker-app
+              chown ubuntu /home/ubuntu/tracker-app
               EOF
 
   tags = merge(local.common_tags, {
