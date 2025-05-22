@@ -56,4 +56,5 @@ terraform apply
 
 ## CI/CD Pipeline – GitHub Actions
 
-Pipeline file: `.github/workflows/app_CI-CD.yaml`
+Pipeline files: `.github/workflows/ci-cd-staging.yaml` 
+                `.github/workflows/ci-cd-prod.yaml`
