@@ -1,9 +1,9 @@
 name: CI/CD - Production
 
 on:
-  push:
-    branches:
-      - prod
+  # push:
+  #   branches:
+  #     - prod
   workflow_dispatch:
 
 jobs:

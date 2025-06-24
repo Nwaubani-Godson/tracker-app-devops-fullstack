@@ -24,7 +24,7 @@ cd Task_Tracker_App
 ### 2. Start the application locally
 
 ```bash
-docker-compose up --build
+docker-compose -f docker-compose-dev.yaml up --build
 ```
 
 ### 3. Access the app
