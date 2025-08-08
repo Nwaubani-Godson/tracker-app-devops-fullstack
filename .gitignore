@@ -10,6 +10,8 @@ alertmanager/amtool
 prometheus/data/
 prometheus/wal/
 prometheus/snapshots/
+prometheus/consoles/
+prometheus/console_libraries/
 
 alertmanager/data/
 *.log
