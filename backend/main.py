@@ -6,7 +6,7 @@ from uuid import uuid4
 import logging
 from logging.handlers import RotatingFileHandler
 import time
-from prometheus_client import start_http_server, Counter, Gauge  # type: ignore
+from prometheus_client import start_http_server, Counter, Gauge, Summary, Histogram  # type: ignore
 import threading
 
 # ------------------ Logging Configuration ------------------ #
@@ -33,6 +33,8 @@ TASKS_CREATED = Counter("tasks_created_count_total", "Number of tasks created", 
 REQUEST_INPROGRESS = Gauge("api_requests_in_progress", "Number of API requests in progress")
 ACTIVE_TASKS = Gauge("active_tasks", "Current number of active tasks in memory")
 REQUEST_LAST_SERVED = Gauge("api_requests_last_served", "Timestamp of the last served API request"  )
+REQUEST_RESPOND_TIME_SUMMARY = Summary("api_response_latency_seconds", "Response latency in seconds")
+REQUEST_RESPOND_TIME_HISTOGRAM = Histogram("api_response_latency_histogram_seconds", "response latency histogram in seconds")
 
 app = FastAPI()
 
@@ -73,12 +75,14 @@ class Task(BaseModel):
     completed: bool = False
 
 # ------------------ API Endpoints ------------------ #
+
 @app.get("/tasks", response_model=List[Task])
 def list_tasks():
+    start_time = time.time()
     try:
         REQUEST_COUNT.labels(api_name="prom_tasks_tracker_api", endpoint="/tasks").inc()
         REQUEST_INPROGRESS.inc()
-        # time.sleep(5)  # Simulate delay, you can uncomment to test delay and get the request_inprogress metric
+        time.sleep(10)  # Simulate delay, you can uncomment to test delay and get the request_inprogress metric
         response = list(tasks.values())
         return response
     except Exception as e:
@@ -86,9 +90,14 @@ def list_tasks():
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         REQUEST_INPROGRESS.dec()
+        time_taken = time.time() - start_time
+        REQUEST_RESPOND_TIME_SUMMARY.observe(time_taken)
+        REQUEST_RESPOND_TIME_HISTOGRAM.observe(time_taken)
+
 
 @app.post("/tasks", response_model=Task)
 def add_task(task: Task):
+    start_time = time.time()
     try:
         task.id = str(uuid4())
         tasks[task.id] = task
@@ -98,9 +107,15 @@ def add_task(task: Task):
     except Exception as e:
         logger.error(f"Error in POST /tasks: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        time_taken = time.time() - start_time
+        REQUEST_RESPOND_TIME_SUMMARY.observe(time_taken)
+        REQUEST_RESPOND_TIME_HISTOGRAM.observe(time_taken)
+
 
 @app.put("/tasks/{task_id}", response_model=Task)
 def update_task(task_id: str, updated_task: Task):
+    start_time = time.time()
     try:
         if task_id not in tasks:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -112,9 +127,15 @@ def update_task(task_id: str, updated_task: Task):
     except Exception as e:
         logger.error(f"Error in PUT /tasks/{task_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        time_taken = time.time() - start_time
+        REQUEST_RESPOND_TIME_SUMMARY.observe(time_taken)
+        REQUEST_RESPOND_TIME_HISTOGRAM.observe(time_taken)
+
 
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: str):
+    start_time = time.time()
     try:
         if task_id not in tasks:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -126,3 +147,7 @@ def delete_task(task_id: str):
     except Exception as e:
         logger.error(f"Error in DELETE /tasks/{task_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        time_taken = time.time() - start_time
+        REQUEST_RESPOND_TIME_SUMMARY.observe(time_taken)
+        REQUEST_RESPOND_TIME_HISTOGRAM.observe(time_taken)

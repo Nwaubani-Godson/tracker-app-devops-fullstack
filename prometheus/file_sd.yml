@@ -1,0 +1,18 @@
+- targets:
+  - localhost:9100
+  labels:
+    team: "development"
+    region: "Nigeria"
+
+- targets:
+  - localhost:9100
+  labels:
+    team: "monitoring"
+    region: "Ghana"
+
+
+- targets:
+  - localhost:9100
+  labels:
+    team: "development"
+    region: "Cameroon"

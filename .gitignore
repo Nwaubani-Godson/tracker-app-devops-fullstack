@@ -4,3 +4,16 @@
 venv/
 __pycache__/
 .pytest_cache/
+prometheus/prometheus
+alertmanager/alertmanager
+alertmanager/amtool
+prometheus/data/
+prometheus/wal/
+prometheus/snapshots/
+
+alertmanager/data/
+*.log
+*.tmp
+
+
+

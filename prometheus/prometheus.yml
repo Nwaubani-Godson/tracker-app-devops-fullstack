@@ -1,0 +1,76 @@
+# my global config
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - localhost:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - "rules/my-rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "prometheus"
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # - job_name: "node_exporter"
+
+  #   # metrics_path defaults to '/metrics'
+  #   # scheme defaults to 'http'
+    
+  #   static_configs:
+  #     - targets: ["localhost:9100"]
+    
+    # implementing a service discovery configuration for node_exporter
+    # using the file_sd_config to load targets from a file
+  - job_name: "node_exporter"
+    file_sd_configs:
+      - files:
+        - file_sd.yml
+    relabel_configs:
+      - source_labels: [team]
+        regex: "development"
+        action: keep
+
+  - job_name: "task_tracker_api"
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'
+    
+    static_configs:
+      - targets: ['localhost:8001']
+
+  - job_name: "pushgateway"
+    static_configs:
+      - targets: ['localhost:9091']
+
+  # Aws EC2 service discovery integration
+  - job_name: "ec2"
+    ec2_sd_configs:
+      - access_key: <your_access_key>
+        secret_key: <your_secret_key>
+        region: <your_region>
+    relabel_configs:
+      - source_labels: [__meta_ec2_public_ip]
+        regex: '(.*)'
+        replacement: '${1}:9100'
+        target_label: [__address__]
+
+  - job_name: "grafana"
+    static_configs:
+      - targets: ['localhost:3000']
