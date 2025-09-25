@@ -1,0 +1,48 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment to destroy (staging or production)'
+        required: true
+        default: 'staging'
+      confirm:
+        description: 'Type "YES" to confirm destruction'
+        required: true
+        default: 'NO'
+
+jobs:
+  terraform-destroy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set Terraform working directory
+        run: echo "TF_DIR=infra_config/${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Confirm destruction
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" && "${{ github.event.inputs.confirm }}" != "YES" ]]; then
+            echo "You must type YES to destroy production environment."
+            exit 1
+          fi
+          echo "Environment confirmed: ${{ github.event.inputs.environment }}"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform Init
+        run: terraform -chdir=$TF_DIR init
+
+      - name: Terraform Destroy
+        run: terraform -chdir=$TF_DIR destroy -auto-approve
