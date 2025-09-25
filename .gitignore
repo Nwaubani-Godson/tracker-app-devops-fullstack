@@ -17,5 +17,10 @@ alertmanager/data/
 *.log
 *.tmp
 
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+
 
 

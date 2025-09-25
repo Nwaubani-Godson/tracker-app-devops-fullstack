@@ -1,65 +1,77 @@
 name: CI/CD - Production
 
 on:
-  # push:
-  #   branches:
-  #     - prod
-  workflow_dispatch:
+  workflow_dispatch:   
 
 jobs:
   test_backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3   
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.11  
 
       - name: Install Dependencies and Run Tests
-        working-directory: ./backend
+        working-directory: ./backend  
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest httpx
-          pytest ./tests/
+          pytest ./tests/   # Run unit tests
 
   deploy_production:
-    needs: test_backend
+    needs: test_backend   
     runs-on: ubuntu-latest
+
+    environment:   
+      name: production   
+      # url: https://${{ secrets.PROD_DOMAIN }}   # Optional: link to live app
+    
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3  
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-east-1   
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v1  
 
       - name: Build and Push Production Images
         run: |
+          # Use commit SHA as tag instead of only "latest"
+          IMAGE_TAG=${GITHUB_SHA}
+
+          # Build and push backend
           docker build -t backend ./backend
+          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:$IMAGE_TAG
           docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
 
+          # Build and push frontend
           docker build -t frontend ./frontend
+          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:$IMAGE_TAG
           docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
 
       - name: Create .env for Production
         run: |
-          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest" > .env
-          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest" >> .env
+          IMAGE_TAG=${GITHUB_SHA}   # same tag as above
+          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-backend-repo:$IMAGE_TAG" > .env
+          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:$IMAGE_TAG" >> .env
           echo "FRONTEND_EXTERNAL_BACKEND_URL=http://${{ secrets.PROD_EC2_HOST }}:8000" >> .env
 
       - name: Deploy to EC2 (Production)
@@ -71,17 +83,26 @@ jobs:
         run: |
           echo "$KEY" > key.pem
           chmod 600 key.pem
+
+          # Copy docker-compose + env file
           scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/tracker-app/
+
+          # SSH into EC2 and deploy
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
             set -e
             cd /home/ubuntu/tracker-app
+
+            # Authenticate Docker to ECR
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+            # Pull latest images, restart containers
             docker-compose --env-file .env pull
             docker-compose --env-file .env down
             docker-compose --env-file .env up -d
+
+            # Add health check after deploy
+            echo "Waiting for backend to become healthy..."
+            sleep 10
+            curl -f http://localhost:8000/health || (echo "Backend health check failed!" && exit 1)
           EOF
-
-
-
-
-    
+          echo "Deployment to production successful!"

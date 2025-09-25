@@ -1,6 +1,4 @@
-//const API = "http://backend:8000/tasks"; // uncomment for local dev test not in use
-const API = "http://localhost:8000/tasks"; 
-//const API = "http://107.23.92.88:8000/tasks";
+const API = window._env_.BACKEND_URL + "/tasks";
 
 
 async function loadTasks() {
