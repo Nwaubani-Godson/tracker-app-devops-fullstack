@@ -107,7 +107,15 @@ jobs:
 
           echo ">>> Installing Docker & docker-compose..."
           sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
-          sudo apt-get install -y docker.io docker-compose
+          echo ">>> Installing latest Docker Compose v2..."
+          sudo apt-get remove -y docker-compose || true
+          sudo curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
+              -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+          echo ">>> Docker Compose version:"
+          docker-compose version
+
           sudo systemctl enable docker
           sudo systemctl start docker
           sudo usermod -aG docker ubuntu
