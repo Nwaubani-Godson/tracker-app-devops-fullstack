@@ -110,15 +110,28 @@ jobs:
             rm -rf awscliv2.zip aws
           fi
 
+          echo ">>> DEBUG: Printing AWS CLI version..."
+          aws --version
+
+          echo ">>> DEBUG: Printing whoami and docker version..."
+          whoami
+          docker --version
+          docker info || true
+
+          echo ">>> DEBUG: Printing ECR_REGISTRY..."
+          echo "ECR_REGISTRY=$ECR_REGISTRY"
+
           echo ">>> Authenticating Docker to ECR..."
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+          aws ecr get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin $ECR_REGISTRY || { echo "ECR login failed!"; exit 1; }
 
           echo ">>> Pulling and restarting containers..."
-          docker-compose --env-file .env pull
+          docker-compose --env-file .env pull || { echo "Pull failed"; exit 1; }
           docker-compose --env-file .env down
           docker-compose --env-file .env up -d
 
           echo ">>> Waiting for backend to become healthy..."
           sleep 10
-          curl -f http://localhost:8000/health || (echo "Backend health check failed!" && exit 1)
+          curl -v http://localhost:8000/health || (echo "Backend health check failed!" && exit 1)
           EOF
+
