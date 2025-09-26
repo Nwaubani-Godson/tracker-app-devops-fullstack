@@ -30,6 +30,10 @@ jobs:
   deploy_staging:
     needs: test_backend
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
 
     steps:
       - name: Checkout Code
@@ -40,7 +44,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -52,23 +56,23 @@ jobs:
 
           # Backend
           docker build -t backend ./backend
-          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:$IMAGE_TAG
-          docker push ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:$IMAGE_TAG
-          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:latest
+          docker tag backend:latest $ECR_REGISTRY/staging-backend-repo:$IMAGE_TAG
+          docker push $ECR_REGISTRY/staging-backend-repo:$IMAGE_TAG
+          docker tag backend:latest $ECR_REGISTRY/staging-backend-repo:latest
+          docker push $ECR_REGISTRY/staging-backend-repo:latest
 
           # Frontend
           docker build -t frontend ./frontend
-          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:$IMAGE_TAG
-          docker push ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:$IMAGE_TAG
-          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:latest
+          docker tag frontend:latest $ECR_REGISTRY/staging-frontend-repo:$IMAGE_TAG
+          docker push $ECR_REGISTRY/staging-frontend-repo:$IMAGE_TAG
+          docker tag frontend:latest $ECR_REGISTRY/staging-frontend-repo:latest
+          docker push $ECR_REGISTRY/staging-frontend-repo:latest
 
       - name: Create .env for Staging
         run: |
           IMAGE_TAG=${GITHUB_SHA}
-          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/staging-backend-repo:$IMAGE_TAG" > .env
-          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/staging-frontend-repo:$IMAGE_TAG" >> .env
+          echo "BACKEND_IMAGE=$ECR_REGISTRY/staging-backend-repo:$IMAGE_TAG" > .env
+          echo "FRONTEND_IMAGE=$ECR_REGISTRY/staging-frontend-repo:$IMAGE_TAG" >> .env
           echo "FRONTEND_EXTERNAL_BACKEND_URL=http://${{ secrets.STAGING_EC2_HOST }}:8000" >> .env
 
       - name: Deploy to EC2 (Staging)
@@ -76,7 +80,7 @@ jobs:
           HOST: ${{ secrets.STAGING_EC2_HOST }}
           USERNAME: ubuntu
           KEY: ${{ secrets.STAGING_EC2_SSH_KEY }}
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
         run: |
           echo "$KEY" > key.pem
           chmod 600 key.pem
@@ -134,4 +138,3 @@ jobs:
           sleep 10
           curl -v http://localhost:8000/health || (echo "Backend health check failed!" && exit 1)
           EOF
-
