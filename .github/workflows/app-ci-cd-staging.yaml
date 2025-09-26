@@ -25,9 +25,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest httpx
-          pytest ./tests/   # Run unit tests
+          pytest ./tests/
 
-  deploy_staging:              
+  deploy_staging:
     needs: test_backend
     runs-on: ubuntu-latest
 
@@ -85,29 +85,40 @@ jobs:
           scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/tracker-app/
 
           # SSH into EC2 and deploy
-          ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST <<'EOF'
-            set -e
-            cd /home/ubuntu/tracker-app
+          ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << 'EOF'
+          set -e
+          cd /home/ubuntu/tracker-app
 
-            # Install AWS CLI if missing
-            if ! command -v aws &> /dev/null; then
-              echo "AWS CLI not found. Installing..."
-              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-              unzip awscliv2.zip
-              sudo ./aws/install
-              rm -rf awscliv2.zip aws
-            fi
+          echo ">>> Updating package lists..."
+          sudo apt-get update -y
 
-            # Authenticate Docker to ECR
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+          echo ">>> Installing essential packages..."
+          sudo apt-get install -y unzip curl wget jq ca-certificates gnupg lsb-release
 
-            # Pull, stop, and restart containers
-            docker-compose --env-file .env pull
-            docker-compose --env-file .env down
-            docker-compose --env-file .env up -d
+          echo ">>> Installing Docker & docker-compose..."
+          sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+          sudo apt-get install -y docker.io docker-compose
+          sudo systemctl enable docker
+          sudo systemctl start docker
+          sudo usermod -aG docker ubuntu
 
-            # Health check
-            echo "Waiting for backend to become healthy..."
-            sleep 10
-            curl -f http://localhost:8000/health || (echo "Backend health check failed!" && exit 1)
-            EOF
+          echo ">>> Installing AWS CLI v2..."
+          if ! command -v aws &> /dev/null; then
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            rm -rf awscliv2.zip aws
+          fi
+
+          echo ">>> Authenticating Docker to ECR..."
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+          echo ">>> Pulling and restarting containers..."
+          docker-compose --env-file .env pull
+          docker-compose --env-file .env down
+          docker-compose --env-file .env up -d
+
+          echo ">>> Waiting for backend to become healthy..."
+          sleep 10
+          curl -f http://localhost:8000/health || (echo "Backend health check failed!" && exit 1)
+          EOF
