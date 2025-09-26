@@ -33,11 +33,11 @@ jobs:
       - name: Terraform Format
         run: terraform -chdir=$TF_DIR fmt -check
 
-      - name: Terraform Validate
-        run: terraform -chdir=$TF_DIR validate
-
       - name: Terraform Init
         run: terraform -chdir=$TF_DIR init
+
+      - name: Terraform Validate
+        run: terraform -chdir=$TF_DIR validate
 
       - name: Terraform Plan
         run: terraform -chdir=$TF_DIR plan -out=tfplan
