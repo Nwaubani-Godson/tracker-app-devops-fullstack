@@ -99,46 +99,6 @@ jobs:
           set -e
           cd /home/ubuntu/tracker-app
 
-          echo ">>> Updating package lists..."
-          sudo apt-get update -y
-
-          echo ">>> Installing essential packages..."
-          sudo apt-get install -y unzip curl wget jq ca-certificates gnupg lsb-release
-
-          echo ">>> Installing Docker & docker-compose..."
-          sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
-          echo ">>> Installing latest Docker Compose v2..."
-          sudo apt-get remove -y docker-compose || true
-          sudo curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
-              -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-
-          echo ">>> Docker Compose version:"
-          docker-compose version
-
-          sudo systemctl enable docker
-          sudo systemctl start docker
-          sudo usermod -aG docker ubuntu
-
-          echo ">>> Installing AWS CLI v2..."
-          if ! command -v aws &> /dev/null; then
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-            rm -rf awscliv2.zip aws
-          fi
-
-          echo ">>> DEBUG: Printing AWS CLI version..."
-          aws --version
-
-          echo ">>> DEBUG: Printing whoami and docker version..."
-          whoami
-          docker --version
-          docker info || true
-
-          echo ">>> DEBUG: Printing ECR_REGISTRY..."
-          echo "ECR_REGISTRY=$ECR_REGISTRY"
-
           echo ">>> Authenticating Docker to ECR..."
           aws ecr get-login-password --region us-east-1 \
             | docker login --username AWS --password-stdin $ECR_REGISTRY || { echo "ECR login failed!"; exit 1; }
@@ -149,6 +109,7 @@ jobs:
           docker-compose --env-file .env up -d
 
           echo ">>> Waiting for backend to become healthy..."
-          sleep 10
+          sleep 15
           curl -v http://localhost:8000/health || (echo "Backend health check failed!" && exit 1)
           EOF
+          echo ">>> Deployment to Staging completed successfully!"

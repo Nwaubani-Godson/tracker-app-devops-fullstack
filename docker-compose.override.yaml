@@ -16,7 +16,7 @@ services:
     networks:
       - tracker-app-net
     environment:
-      BACKEND_URL: "backend:8000/tasks"   # for local dev and test only
+      BACKEND_URL: "http://localhost:8000"   # dev testing only
 
 networks:
   tracker-app-net:

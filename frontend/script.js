@@ -1,4 +1,11 @@
-const API = window._env_.BACKEND_URL + "/tasks";
+let API;
+
+// Initialize API dynamically after config.js is loaded
+window.addEventListener("DOMContentLoaded", () => {
+  API = window._env_.BACKEND_URL + "/tasks";
+  loadTasks();  // only call it here
+});
+
 
 
 async function loadTasks() {

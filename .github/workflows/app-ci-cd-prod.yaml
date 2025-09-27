@@ -1,88 +1,83 @@
 name: CI/CD - Production
 
 on:
-  # push:
-  #   branches:
-  #     - main
-  workflow_dispatch:   
+  workflow_dispatch:
 
 jobs:
   test_backend:
-    runs-on: ubuntu-latest  
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3   
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11  
+          python-version: 3.11
 
       - name: Install Dependencies and Run Tests
-        working-directory: ./backend  
+        working-directory: ./backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest httpx
-          pytest ./tests/   # Run unit tests
+          pytest ./tests/
 
   deploy_production:
-    needs: test_backend   
+    needs: test_backend
     runs-on: ubuntu-latest
-
-    environment:   
-      name: production   
-      # url: https://${{ secrets.PROD_DOMAIN }}   # Optional: link to live app
-    
+    env:
+      AWS_REGION: us-east-1
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3  
+        uses: actions/checkout@v3
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1   
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1  
+        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build and Push Production Images
         run: |
-          # Use commit SHA as tag instead of only "latest"
           IMAGE_TAG=${GITHUB_SHA}
 
-          # Build and push backend
+          # Backend
           docker build -t backend ./backend
-          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:$IMAGE_TAG
-          docker push ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:$IMAGE_TAG
-          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/production-backend-repo:latest
+          docker tag backend:latest $ECR_REGISTRY/prod-backend-repo:$IMAGE_TAG
+          docker push $ECR_REGISTRY/prod-backend-repo:$IMAGE_TAG
+          docker tag backend:latest $ECR_REGISTRY/prod-backend-repo:latest
+          docker push $ECR_REGISTRY/prod-backend-repo:latest
 
-          # Build and push frontend
+          # Frontend
           docker build -t frontend ./frontend
-          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:$IMAGE_TAG
-          docker push ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:$IMAGE_TAG
-          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:latest
+          docker tag frontend:latest $ECR_REGISTRY/prod-frontend-repo:$IMAGE_TAG
+          docker push $ECR_REGISTRY/prod-frontend-repo:$IMAGE_TAG
+          docker tag frontend:latest $ECR_REGISTRY/prod-frontend-repo:latest
+          docker push $ECR_REGISTRY/prod-frontend-repo:latest
 
       - name: Create .env for Production
         run: |
-          IMAGE_TAG=${GITHUB_SHA}   # same tag as above
-          echo "BACKEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-backend-repo:$IMAGE_TAG" > .env
-          echo "FRONTEND_IMAGE=${{ steps.login-ecr.outputs.registry }}/production-frontend-repo:$IMAGE_TAG" >> .env
-          echo "FRONTEND_EXTERNAL_BACKEND_URL=http://${{ secrets.PROD_EC2_HOST }}:8000" >> .env
+          IMAGE_TAG=${GITHUB_SHA}
+          echo "BACKEND_IMAGE=$ECR_REGISTRY/prod-backend-repo:$IMAGE_TAG" > .env
+          echo "FRONTEND_IMAGE=$ECR_REGISTRY/prod-frontend-repo:$IMAGE_TAG" >> .env
+          echo "FRONTEND_EXTERNAL_BACKEND_URL=https://${{ secrets.PROD_EC2_HOST }}" >> .env
 
       - name: Deploy to EC2 (Production)
         env:
           HOST: ${{ secrets.PROD_EC2_HOST }}
           USERNAME: ubuntu
           KEY: ${{ secrets.PROD_EC2_SSH_KEY }}
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
         run: |
           echo "$KEY" > key.pem
           chmod 600 key.pem
@@ -95,17 +90,30 @@ jobs:
             set -e
             cd /home/ubuntu/tracker-app
 
-            # Authenticate Docker to ECR
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+            echo ">>> Authenticating Docker to ECR..."
+            aws ecr get-login-password --region us-east-1 \
+              | docker login --username AWS --password-stdin $ECR_REGISTRY || { echo "ECR login failed!"; exit 1; }
 
-            # Pull latest images, restart containers
-            docker-compose --env-file .env pull
+            echo ">>> Pulling and updating containers..."
+            docker-compose --env-file .env pull || { echo "Pull failed"; exit 1; }
             docker-compose --env-file .env down
             docker-compose --env-file .env up -d
 
-            # Add health check after deploy
-            echo "Waiting for backend to become healthy..."
-            sleep 10
-            curl -f http://localhost:8000/health || (echo "Backend health check failed!" && exit 1)
+            echo ">>> Waiting for backend to become healthy..."
+            MAX_RETRIES=12
+            RETRY_INTERVAL=5
+            for i in $(seq 1 $MAX_RETRIES); do
+              if curl -s http://localhost:8000/health | grep -q "ok"; then
+                echo "Backend is healthy!"
+                break
+              else
+                echo "Backend not ready yet, retry $i/$MAX_RETRIES..."
+                sleep $RETRY_INTERVAL
+              fi
+              if [ $i -eq $MAX_RETRIES ]; then
+                echo "Backend health check failed after $MAX_RETRIES retries!"
+                exit 1
+              fi
+            done
           EOF
-          echo "Deployment to production successful!"
+          echo ">>> Deployment to Production completed successfully!"
