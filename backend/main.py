@@ -82,7 +82,7 @@ def list_tasks():
     try:
         REQUEST_COUNT.labels(api_name="prom_tasks_tracker_api", endpoint="/tasks").inc()
         REQUEST_INPROGRESS.inc()
-        time.sleep(10)  # Simulate delay, you can uncomment to test delay and get the request_inprogress metric
+        # time.sleep(10)  # Simulate delay, you can uncomment to test delay and get the request_inprogress metric
         response = list(tasks.values())
         return response
     except Exception as e:

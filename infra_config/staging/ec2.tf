@@ -24,17 +24,37 @@ resource "aws_instance" "tracker_app_web_server" {
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ecr_profile.name
 
-  user_data = <<-EOF
-              #!/bin/bash
-              apt-get update -y
-              apt-get install -y docker.io docker-compose git
-              systemctl enable docker
-              systemctl start docker
+user_data = <<-EOF
+            #!/bin/bash
+            set -eux
 
-              # Create app directory
-              mkdir -p /home/ubuntu/tracker-app
-              chown ubuntu:ubuntu /home/ubuntu/tracker-app
-              EOF
+            apt-get update -y
+            apt-get install -y \
+                docker.io \
+                docker-compose \
+                unzip \
+                curl \
+                jq \
+                ca-certificates \
+                gnupg \
+                lsb-release
+
+            systemctl enable docker
+            systemctl start docker
+            usermod -aG docker ubuntu
+
+            # aws cli v2
+            if ! command -v aws &>/dev/null; then
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                unzip awscliv2.zip
+                ./aws/install
+                rm -rf awscliv2.zip aws
+            fi
+
+            mkdir -p /home/ubuntu/tracker-app
+            chown ubuntu:ubuntu /home/ubuntu/tracker-app
+          EOF
+
 
   tags = merge(local.common_tags, {
     Name = "${var.environment}-tracker-app-server"
