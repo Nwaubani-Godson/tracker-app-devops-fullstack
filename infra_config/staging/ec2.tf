@@ -24,7 +24,7 @@ resource "aws_instance" "tracker_app_web_server" {
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ecr_profile.name
 
-user_data = <<-EOF
+  user_data = <<-EOF
             #!/bin/bash
             set -eux
 
