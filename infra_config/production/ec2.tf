@@ -25,16 +25,42 @@ resource "aws_instance" "tracker_app_web_server" {
   iam_instance_profile = aws_iam_instance_profile.ec2_ecr_profile.name
 
   user_data = <<-EOF
-              #!/bin/bash
-              apt-get update -y
-              apt-get install -y docker.io docker-compose git
-              systemctl enable docker
-              systemctl start docker
+            #!/bin/bash
+            set -eux
 
-              # Create app directory
-              mkdir -p /home/ubuntu/tracker-app
-              chown ubuntu /home/ubuntu/tracker-app
-              EOF
+            apt-get update -y
+            apt-get install -y \
+                docker.io \
+                unzip \
+                curl \
+                jq \
+                ca-certificates \
+                gnupg \
+                lsb-release
+
+            systemctl enable docker
+            systemctl start docker
+            usermod -aG docker ubuntu
+
+            # Install latest Docker Compose from GitHub
+            sudo curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+            echo ">>> Docker Compose version:"
+            docker-compose version
+
+            # aws cli v2
+            if ! command -v aws &>/dev/null; then
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                unzip awscliv2.zip
+                ./aws/install
+                rm -rf awscliv2.zip aws
+            fi
+
+            mkdir -p /home/ubuntu/tracker-app
+            chown ubuntu:ubuntu /home/ubuntu/tracker-app
+        EOF
+
+
 
   tags = merge(local.common_tags, {
     Name = "${var.environment}-tracker-app-server"
@@ -46,7 +72,6 @@ resource "aws_security_group" "tracker_app_sg" {
   name        = "${var.environment}-tracker-app-sg"
   description = "Allow web traffic"
   vpc_id      = aws_vpc.main.id
-
 
   tags = merge(local.common_tags, {
     Name = "${var.environment}-tracker-app-sg"
@@ -66,7 +91,7 @@ resource "aws_security_group" "tracker_app_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-      ingress {
+  ingress {
     from_port   = 8000
     to_port     = 8000
     protocol    = "tcp"
