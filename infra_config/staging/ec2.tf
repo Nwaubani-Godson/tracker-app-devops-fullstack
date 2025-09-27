@@ -31,7 +31,6 @@ resource "aws_instance" "tracker_app_web_server" {
             apt-get update -y
             apt-get install -y \
                 docker.io \
-                docker-compose \
                 unzip \
                 curl \
                 jq \
@@ -43,6 +42,12 @@ resource "aws_instance" "tracker_app_web_server" {
             systemctl start docker
             usermod -aG docker ubuntu
 
+            # Install latest Docker Compose from GitHub
+            sudo curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+            echo ">>> Docker Compose version:"
+            docker-compose version
+
             # aws cli v2
             if ! command -v aws &>/dev/null; then
                 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -53,7 +58,8 @@ resource "aws_instance" "tracker_app_web_server" {
 
             mkdir -p /home/ubuntu/tracker-app
             chown ubuntu:ubuntu /home/ubuntu/tracker-app
-          EOF
+        EOF
+
 
 
   tags = merge(local.common_tags, {
