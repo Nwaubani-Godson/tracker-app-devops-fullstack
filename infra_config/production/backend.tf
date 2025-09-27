@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "tasktracker-terraform-state"   
-    key            = "production/terraform.tfstate"   
-    region         = "us-east-1"                   
-    dynamodb_table = "tasktracker-terraform-locks"             
-    encrypt        = true                          
+    bucket         = "tasktracker-terraform-state"
+    key            = "production/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "tasktracker-terraform-locks"
+    encrypt        = true
   }
 }
