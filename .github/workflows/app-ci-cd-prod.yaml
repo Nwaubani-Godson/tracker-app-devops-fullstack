@@ -71,6 +71,9 @@ jobs:
           echo "BACKEND_IMAGE=$ECR_REGISTRY/prod-backend-repo:$IMAGE_TAG" > .env
           echo "FRONTEND_IMAGE=$ECR_REGISTRY/prod-frontend-repo:$IMAGE_TAG" >> .env
           echo "FRONTEND_EXTERNAL_BACKEND_URL=https://${{ secrets.PROD_EC2_HOST }}" >> .env
+          echo APP_IP=${{ secrets.APP_SERVER_PRIVATE_IP }} >> .env
+          echo MON_IP=${{ secrets.MONITORING_SERVER_PRIVATE_IP }} >> .env
+          echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK }}" >> .env
 
       - name: Deploy to EC2 (Production)
         env:

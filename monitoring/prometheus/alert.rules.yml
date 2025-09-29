@@ -1,0 +1,40 @@
+groups:
+  - name: app-alerts
+    rules:
+      - alert: HighRequestLatency
+        expr: api_response_latency_seconds{job="task-tracker-app"} > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "Requests are taking longer than 1s for 2 minutes"
+
+  - name: infra-alerts
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} is down"
+          description: "Prometheus target {{ $labels.instance }} has been unreachable for more than 1 minute."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage above 80% for more than 2 minutes."
+
+      - alert: AppEndpointDown
+        expr: up{job="app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "App endpoint is down"
+          description: "The /metrics endpoint for the app is not responding."

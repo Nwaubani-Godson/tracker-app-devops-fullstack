@@ -1,0 +1,19 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'team-alerts'
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+
+receivers:
+  - name: 'team-alerts'
+    slack_configs:
+      - send_resolved: true
+        channel: '#alerts'
+        api_url: '${SLACK_WEBHOOK_URL}'
+    # pagerduty_configs:
+    #   - service_key: '${PAGERDUTY_API_KEY}'
+    #     send_resolved: true
+        severity: '{{ if eq .CommonLabels.severity "critical" }}critical{{ else }}warning{{ end }}'

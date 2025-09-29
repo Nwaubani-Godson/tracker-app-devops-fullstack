@@ -1,0 +1,33 @@
+name: Deploy Monitoring Stack
+
+on:
+  workflow_dispatch:    # Manual trigger only
+
+jobs:
+  deploy_monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy Monitoring to EC2
+        env:
+          HOST: ${{ secrets.MONITORING_EC2_HOST }}
+          USERNAME: ubuntu
+          KEY: ${{ secrets.MONITORING_EC2_SSH_KEY }}
+        run: |
+          echo "$KEY" > key.pem
+          chmod 600 key.pem
+
+          # Copy monitoring folder
+          scp -o StrictHostKeyChecking=no -i key.pem -r monitoring $USERNAME@$HOST:/home/ubuntu/monitoring/
+
+          # SSH to EC2 and start containers
+          ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
+          set -e
+          cd /home/ubuntu/monitoring
+          docker compose pull || true
+          docker compose down
+          docker compose up -d
+          EOF
