@@ -73,47 +73,47 @@ flowchart TB
 Task_Tracker_App/
 ├── .github/
 │   └── workflows/
-│       ├── app-ci-cd-prod.yml           # Production app deployment
-│       ├── app-ci-cd-staging.yml        # Staging app deployment
-│       ├── deploy-monitoring.yml        # monitoring stack
-│       ├── deploy-prod-logging.yml      # Production logging stack
-│       ├── deploy-staging-logging.yml   # Staging logging stack
-│       ├── infra_destroy_CI-CD.yml      # Infrastructure teardown
-│       └── infra_provision_CI-CD.yml    # Infrastructure provisioning
+│       ├── app-ci-cd-prod.yml           
+│       ├── app-ci-cd-staging.yml        
+│       ├── deploy-monitoring.yml        
+│       ├── deploy-prod-logging.yml      
+│       ├── deploy-staging-logging.yml  
+│       ├── infra_destroy_CI-CD.yml      
+│       └── infra_provision_CI-CD.yml    
 ├── backend/
 │   ├── app/
-│   │   ├── main.py                      # FastAPI application
-│   ├── tests/                           # Test suite
-│   ├── Dockerfile                       # Backend container
-│   └── requirements.txt                 # Python dependencies
+│   │   ├── main.py                      
+│   ├── tests/                           
+│   ├── Dockerfile                      
+│   └── requirements.txt                 
 ├── frontend/
 │   ├── static/
-│   │   ├── index.html                   # Main UI
-│   │   └── script.js                    # Frontend logic
-│   ├── config.template.js               # Dynamic configuration
-│   └── Dockerfile                       # Frontend container
+│   │   ├── index.html                   
+│   │   └── script.js                    
+│   ├── config.template.js              
+│   └── Dockerfile                       
 ├── monitoring/
 │   ├── prometheus/
-│   │   ├── prometheus.yml               # Prometheus configuration
+│   │   ├── prometheus.yml               
 │   │   └── rules/
-│   │       └── alerts.yml               # Alert rules
+│   │       └── alerts.yml              
 │   ├── alertmanager/
-│   │   └── alertmanager.yml             # Alertmanager configuration
+│   │   └── alertmanager.yml            
 │   ├── grafana/
-│   │   ├── dashboards/                  # Grafana dashboards
-│   └── docker-compose.monitoring.yml    # Monitoring stack compose
+│   │   ├── dashboards/                 
+│   └── docker-compose.monitoring.yml    
 ├── logging/
 │   ├── fluent-bit/
-│   │   └── fluent-bit.conf              # Fluent Bit configuration
-│   └── docker-compose.logging.yml       # Logging agents compose
+│   │   └── fluent-bit.conf             
+│   └── docker-compose.logging.yml       
 ├── infra_config/
-│   ├── production/                      # Production Terraform
-│   └── staging/                         # Staging Terraform
-├── docker-compose.override.yml          # Local overrides
-├── docker-compose.yml                   # Main application stack
-├── .env                                 # Environment variables
-├── .gitignore                           # Git ignore rules
-└── README.md                            # This file
+│   ├── production/                     
+│   └── staging/                         
+├── docker-compose.override.yml          
+├── docker-compose.yml                   
+├── .env                                 
+├── .gitignore                           
+└── README.md                            
 ```
 
 ## Quick Start
