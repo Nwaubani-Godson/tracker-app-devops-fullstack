@@ -1,4 +1,4 @@
-name: Deploy Logging Stack
+name: Deploy Logging Stack to prod
 
 on:
   workflow_dispatch:    # Manual trigger only
