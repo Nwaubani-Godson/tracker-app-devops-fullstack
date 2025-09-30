@@ -1,14 +1,14 @@
-from fastapi import FastAPI, Request, HTTPException # type: ignore
-from fastapi.middleware.cors import CORSMiddleware # type: ignore
-from fastapi.responses import Response, JSONResponse # type: ignore
-from pydantic import BaseModel # type: ignore
+from fastapi import FastAPI, Request, HTTPException  # type: ignore
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore
+from fastapi.responses import Response, JSONResponse  # type: ignore
+from pydantic import BaseModel  # type: ignore
 from typing import Dict, List
 from uuid import uuid4
 import logging, time, uuid, os, json
 
 # Prometheus
-from prometheus_client import Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST # type: ignore
-from prometheus_fastapi_instrumentator import Instrumentator # type: ignore
+from prometheus_client import Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST  # type: ignore
+from prometheus_fastapi_instrumentator import Instrumentator  # type: ignore
 
 # ---------- Structured JSON logging ----------
 class JsonFormatter(logging.Formatter):
@@ -38,7 +38,13 @@ if not logger.handlers:
 
 # also write to a rotating file for local persistence; fluent bit will read this file
 from logging.handlers import RotatingFileHandler
+
 log_file = os.getenv("APP_LOG_PATH", "/var/log/prom_tasks/app.log")
+
+# Ensure the directory exists before creating the handler
+log_dir = os.path.dirname(log_file)
+os.makedirs(log_dir, exist_ok=True)
+
 fh = RotatingFileHandler(log_file, maxBytes=10_000_000, backupCount=5)
 fh.setFormatter(JsonFormatter())
 logger.addHandler(fh)
@@ -57,13 +63,11 @@ app.add_middleware(
 async def add_request_id(request: Request, call_next):
     req_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
     request.state.request_id = req_id
-    # call_next and attach header to response
     try:
         response = await call_next(request)
         response.headers["X-Request-ID"] = req_id
         return response
     except Exception as e:
-        # log unhandled error with request_id
         logger.exception("Unhandled exception", extra={"request_id": req_id})
         raise
 
@@ -86,17 +90,15 @@ REQUEST_LATENCY = Histogram("api_request_latency_seconds", "Latency of API reque
 # ---------- metrics endpoint (exposed by the app) ----------
 @app.get("/metrics")
 def metrics():
-    # single-process: generate_latest() suffices
     data = generate_latest()
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
 
-# Also have a lightweight health endpoint
 @app.get("/healthz")
 def health():
     return JSONResponse({"status": "ok"})
 
 # ---------- Instrumentation: auto-instrument HTTP metrics ----------
-Instrumentator().instrument(app).expose(app)  # this will also expose /metrics but safe to have explicit endpoint
+Instrumentator().instrument(app).expose(app)
 
 # ---------- API endpoints ----------
 @app.get("/tasks", response_model=List[Task])
