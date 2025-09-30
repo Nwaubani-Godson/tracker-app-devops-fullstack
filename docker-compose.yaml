@@ -7,6 +7,7 @@ services:
       - 8000
     networks:
       - tracker-app-net
+    restart: always
 
   frontend:
     image: ${FRONTEND_IMAGE}
@@ -18,6 +19,8 @@ services:
       - tracker-app-net
     environment:
       BACKEND_URL:  "${FRONTEND_EXTERNAL_BACKEND_URL}"
+    restart: always
+
 
 networks:
   tracker-app-net:
