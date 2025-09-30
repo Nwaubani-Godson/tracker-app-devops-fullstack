@@ -39,7 +39,7 @@ if not logger.handlers:
 # also write to a rotating file for local persistence; fluent bit will read this file
 from logging.handlers import RotatingFileHandler
 
-log_file = os.getenv("APP_LOG_PATH", "/var/log/prom_tasks/app.log")
+log_file = os.getenv("APP_LOG_PATH", "./logs/app.log") 
 
 # Ensure the directory exists before creating the handler
 log_dir = os.path.dirname(log_file)
