@@ -30,10 +30,10 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "mkdir -p /home/ubuntu/logging"
 
           # Copy logging folder to the server
-          scp -o StrictHostKeyChecking=no -i key.pem -r logging $USERNAME@$HOST:/home/ubuntu/logging/
+          scp -o StrictHostKeyChecking=no -i key.pem -r logging/fluent-bit $USERNAME@$HOST:/home/ubuntu/logging/
 
           # Copy docker-compose + env file
-          scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/logging/
+          scp -o StrictHostKeyChecking=no -i key.pem logging/docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/logging/
 
           # SSH into the server and start the containers
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
