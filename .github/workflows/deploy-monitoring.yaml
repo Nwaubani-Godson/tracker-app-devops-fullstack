@@ -20,6 +20,10 @@ jobs:
           echo "$KEY" > key.pem
           chmod 600 key.pem
 
+          # Ensure the directory exists on the EC2 server
+          ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "mkdir -p /home/ubuntu/monitoring"
+
+
           # Copy monitoring folder
           scp -o StrictHostKeyChecking=no -i key.pem -r monitoring $USERNAME@$HOST:/home/ubuntu/monitoring/
 
@@ -27,7 +31,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
           set -e
           cd /home/ubuntu/monitoring
-          docker compose pull || true
-          docker compose down
-          docker compose up -d
+          docker-compose pull || true
+          docker-compose down
+          docker-compose up -d
           EOF
