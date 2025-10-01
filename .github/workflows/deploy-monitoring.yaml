@@ -11,6 +11,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Create .env file for monitoring
+        run: |
+          echo APP_IP=${{ secrets.APP_SERVER_PRIVATE_IP }} >> .env
+          echo MON_IP=${{ secrets.MONITORING_SERVER_PRIVATE_IP }} >> .env
+          echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK }}" >> .env
+
       - name: Deploy Monitoring to EC2
         env:
           HOST: ${{ secrets.MONITORING_EC2_HOST }}
