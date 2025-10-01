@@ -31,7 +31,8 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
           set -e
           cd /home/ubuntu/monitoring
-          docker-compose pull || true
-          docker-compose down
-          docker-compose up -d
+          echo ">>> Pulling and restarting containers..."
+          docker-compose --env-file .env pull || { echo "Pull failed"; exit 1; }
+          docker-compose --env-file .env down
+          docker-compose --env-file .env up -d
           EOF
