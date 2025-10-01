@@ -30,10 +30,10 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "mkdir -p /home/ubuntu/monitoring"
 
           # Copy monitoring folder
-          scp -o StrictHostKeyChecking=no -i key.pem -r monitoring $USERNAME@$HOST:/home/ubuntu/monitoring/
+          scp -o StrictHostKeyChecking=no -i key.pem -r monitoring/* $USERNAME@$HOST:/home/ubuntu/monitoring/
 
           # Copy docker-compose + env file
-          scp -o StrictHostKeyChecking=no -i key.pem monitoring/docker-compose.yaml .env $USERNAME@$HOST:/home/ubuntu/monitoring/
+          scp -o StrictHostKeyChecking=no -i key.pem .env $USERNAME@$HOST:/home/ubuntu/monitoring/
 
           # SSH to EC2 and start containers
           ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST << EOF
