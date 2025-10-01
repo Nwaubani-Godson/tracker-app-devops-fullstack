@@ -9,7 +9,7 @@ client = TestClient(app)
 def test_create_get_update_delete_tasks():
     # Create a task
     response = client.post("/tasks", json={"title": "Test Task"})
-    assert response.status_code == 200
+    assert response.status_code == 201
     task = response.json()
     assert task["title"] == "Test Task"
     assert task["completed"] is False
